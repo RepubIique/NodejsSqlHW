@@ -10,6 +10,8 @@ let connection = mysql.createConnection({
   database: "bamazon"
 });
 
+let something;
+
 connection.connect(function(err) {
   if (err) throw err;
   afterConnection();
@@ -30,7 +32,7 @@ function ask() {
         name: "id",
         type: "list",
         message: "ID of the product you would like to buy",
-        choices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        choices: [1, 2, 3, 4, 5, 6, 7, 8, 9]
       },
       {
         name: "units",
@@ -56,22 +58,37 @@ function ask() {
         `SELECT * FROM products WHERE item_id=${answer.id}`,
         function(err, res) {
           if (err) throw err;
+
           let remaining = res[0].stock_quantity - answer.units;
+          something = remaining;
+
           if (remaining < 0) {
             console.log("Not enough stock");
           } else {
             console.log(
-              "After " +
-                answer.units +
-                " purchases there are " +
-                remaining +
-                " " +
-                res[0].product_name +
-                "[s] remaining."
+              `After ${answer.units} purchases there are ${remaining} ${res[0].product_name}[s] remaining`
+            );
+
+            console.log(
+              `The total cost of the purchase is $${answer.units *
+                res[0].price}`
+            );
+
+            connection.query(
+              `UPDATE products SET stock_quantity = ${remaining} Where item_id = ${answer.id}`,
+              function(err, res) {
+                if (err) throw err;
+              }
+            );
+            console.log(
+              `Database Updated to ${remaining} ${res[0].product_name}`
             );
           }
         }
       );
-      connection.end();
+
+      // connection.end();
     });
 }
+
+console.log(something);
